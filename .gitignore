@@ -1,0 +1,4 @@
+node_modules
+dist/sato-api.js
+docs
+build

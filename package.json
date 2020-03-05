@@ -1,0 +1,26 @@
+{
+  "name": "sato-api",
+  "version": "1.0.0",
+  "description": "SATO Web AEP API reference implementation.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack --config webpack.config.js --mode 'production'",
+    "dev": "webpack --config webpack.config.js --mode 'development'",
+    "babel": "babel src -d build",
+    "jsdoc2md": "jsdoc2md --partial partials/body.hbs --files src/api.js > docs/api.md",
+    "jsdoc": "jsdoc src/api.js -d docs"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.8.4",
+    "@babel/preset-env": "^7.8.4",
+    "babel-loader": "^8.0.6",
+    "jsdoc-to-markdown": "^5.0.3",
+    "webpack": "^4.41.6",
+    "webpack-cli": "^3.3.11"
+  },
+  "dependencies": {}
+}
