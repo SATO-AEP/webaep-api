@@ -8,6 +8,8 @@ let baseURL;
 let wsURL;
 let isLocalClient = false;
 
+let originalIsPrinter
+
 function setBaseURL(ip) {
 	if (ip == 'localhost') {
 		ip = '127.0.0.1';
@@ -25,6 +27,7 @@ function setBaseURL(ip) {
 
 if (typeof sato == 'object') {
 	setBaseURL('localhost');
+	originalIsPrinter = sato.isPrinter;
 } else {
 	setBaseURL(window.location.hostname);
 }
@@ -222,6 +225,18 @@ async function connect() {
 }
 
 export default {
+	/**
+	 * Indicates whether the application is running in the printer's web browser or not.
+	 * @type {boolean}
+	 * @example
+	 * if (sato.isPrinter) {
+	 *     // do something
+	 * } else {
+	 *     // do something else
+	 * }
+	 */
+	isPrinter: originalIsPrinter === true,
+
 	/**
 	 * Set printer IP and open a WebSocket connection.
 	 * If no IP is specified the connection will be made either to `localhost` if running locally, otherwise to `window.location.hostname`.
