@@ -373,7 +373,7 @@ export default {
 	 * @param {number} options.quantity Number of labels to print.
 	 * @param {Object} options.data Key-value pairs of application variables to set and evaluate.
 	 * @param {successCallback} options.success Print request successful callback.
-	 * @param {errorCalback} options.error Print request error callback.
+	 * @param {errorCallback} options.error Print request error callback.
 	 * @param {labelCountCallback} options.labelCount Label printed callbck.
 	 * @param {batchDoneCallback} options.batchDone Batch done callback.
 	 * @param {printerErrorCallback} options.batchError Callback for each error that occurs until batch done.
