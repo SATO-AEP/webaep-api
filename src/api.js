@@ -243,7 +243,9 @@ export default {
 	 * @param {string} ip Printer IP.
 	 */
 	connect(ip) {
-		setBaseURL(ip);
+		if (typeof ip != 'undefined') {
+			setBaseURL(ip);
+		}
 		return connect();
 	},
 
