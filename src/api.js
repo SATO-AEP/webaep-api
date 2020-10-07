@@ -27,6 +27,7 @@ function setBaseURL(ip) {
 
 if (typeof sato == 'object') {
 	setBaseURL('localhost');
+	// eslint-disable-next-line no-undef
 	originalIsPrinter = sato.isPrinter;
 } else {
 	setBaseURL(window.location.hostname);
