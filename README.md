@@ -15,7 +15,7 @@ To use the library without Babel, grab the latest pre-transpiled version from th
 
 The pre-transpiled version can be included in your project as a script tag in your `index.html`. E.g.:
 
-`<script src="libs/sato-api.min.js">`
+`<script src="libs/webaep-api.min.js"></script>`
 
 This will attach the API to the global `sato` object.
 
@@ -34,3 +34,9 @@ The API is documented using jsdoc. The compiled documentation comes in two versi
 To build the HTML documentation, run `npm run jsdoc`.
 
 To build the Markdown documentation, run `npm run jsdoc2md`.
+
+## Changelog
+
+### 1.1.0
+
+* Added `setVariablesCallback` and `setUserDataCallback`.

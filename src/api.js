@@ -44,6 +44,8 @@ const errors = {};
 let printDoneCallback;
 let scannerCallback;
 let errorCallback;
+let variablesCallback;
+let userDataCallback;
 
 // Batch callbacks
 let labelCountCallback;
@@ -165,6 +167,22 @@ async function handleMessage(msg) {
 				if (scanData.length >= SCAN_QUEUE_SIZE)
 					scanData.shift();
 				scanData.push(string);
+			}
+			break;
+		}
+
+		case msgType.webAepVariables: {
+			let variables = msg.data;
+			if (typeof variablesCallback == "function") {
+				variablesCallback(variables);
+			}
+			break;
+		}
+
+		case msgType.webAepUserData: {
+			let data = msg.data;
+			if (typeof userDataCallback == "function") {
+				userDataCallback(data);
 			}
 			break;
 		}
@@ -307,6 +325,32 @@ export default {
 	},
 
 	/**
+	 * @callback variablesCallback
+	 * @param {Object} variables Key-value pairs of modified variables.
+	 */
+
+	/**
+	 * Callback called when a live variable has been modified.
+	 * @param {variablesCallback} callback
+	 */
+	setVariablesCallback(callback) {
+		variablesCallback = callback;
+	},
+
+	/**
+	 * @callback userDataCallback
+	 * @param {*} data User data.
+	 */
+
+	/**
+	 * Callback called when user data is sent from the Lua layer.
+	 * @param {userDataCallback} callback
+	 */
+	setUserDataCallback(callback) {
+		userDataCallback = callback;
+	},
+
+	/**
 	 * Retrieves variables from printer.
 	 * @returns {Object} Key-value pairs of all application variables.
 	 */
@@ -372,7 +416,7 @@ export default {
 
 	/**
 	 * Print format `formatData`.
-	 * @param {Object} formatData Format to print as JSON.
+	 * @param {(Object|Object[])} formatData Format or array of formats to print as JSON.
 	 * @param {number} options.quantity Number of labels to print.
 	 * @param {Object} options.data Key-value pairs of application variables to set and evaluate.
 	 * @param {successCallback} options.success Print request successful callback.
