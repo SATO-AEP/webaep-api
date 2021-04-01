@@ -30,7 +30,7 @@ if (typeof sato == 'object') {
 	// eslint-disable-next-line no-undef
 	originalIsPrinter = sato.isPrinter;
 } else {
-	setBaseURL(window.location.hostname);
+	setBaseURL(window.location.host);
 }
 
 // Scan queue

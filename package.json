@@ -1,6 +1,6 @@
 {
   "name": "webaep-api",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "SATO Web AEP API reference implementation.",
   "main": "index.js",
   "scripts": {
