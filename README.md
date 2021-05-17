@@ -6,7 +6,7 @@ A JavaScript wrapper for the Web AEP HTTP API, with additional functions for rec
 ### Projects with a build system
 If you have a project setup with webpack or similar, with a transpilation step using Babel, copy the `src/api.js` file into your project and import it. E.g.:
 
-`import api as * from 'libs/api.js';`
+`import * as api from 'libs/api.js';`
 
 **Note:** The printer browser is running Chrome version 53 so make sure to configure Babel accordingly.
 
