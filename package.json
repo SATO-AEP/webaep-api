@@ -2,24 +2,27 @@
   "name": "webaep-api",
   "version": "1.1.1",
   "description": "SATO Web AEP API reference implementation.",
-  "main": "index.js",
+  "main": "lib/api.js",
+  "files": [
+    "lib"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --config webpack.config.js --mode production",
     "dev": "webpack --config webpack.config.js --mode development",
-    "babel": "babel src -d build",
+    "babel": "babel src/api.js -d lib",
     "jsdoc2md": "jsdoc2md --partial partials/body.hbs --files src/api.js > docs/api.md",
     "jsdoc": "jsdoc src/api.js -d docs"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@babel/cli": "^7.13.16",
-    "@babel/core": "^7.14.2",
+    "@babel/cli": "^7.14.3",
+    "@babel/core": "^7.14.3",
     "@babel/preset-env": "^7.14.2",
     "babel-loader": "^8.2.2",
     "jsdoc-to-markdown": "^7.0.1",
-    "webpack": "^5.37.0",
+    "webpack": "^5.38.1",
     "webpack-cli": "^4.7.0"
   },
   "dependencies": {}

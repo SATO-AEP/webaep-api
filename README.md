@@ -4,16 +4,26 @@ A JavaScript wrapper for the Web AEP HTTP API, with additional functions for rec
 
 ## Usage
 ### Projects with a build system
-If you have a project setup with webpack or similar, with a transpilation step using Babel, copy the `src/api.js` file into your project and import it. E.g.:
+If you have a project setup with npm and webpack or similar.
 
-`import * as api from 'libs/api.js';`
+Add a dependency to your `package.json`.
+
+`npm install SATO-AEP/webaep-api`
+
+And then import where needed.
+
+`import api from 'webaep-api'`
+
+*Alternatively*, if you prefer working with the untranspiled code, simply copy the `src/api.js` file from this repo into your project and import it. E.g.:
+
+`import api from 'libs/api.js'`
 
 **Note:** The printer browser is running Chrome version 53 so make sure to configure Babel accordingly.
 
 ### Project without a build system
-To use the library without Babel, grab the latest pre-transpiled version from the release section, or see the build instructions below.
+To use the library without a build system, grab the latest pre-built version from the release section, or see the build instructions below.
 
-The pre-transpiled version can be included in your project as a script tag in your `index.html`. E.g.:
+The pre-built version can be included in your project as a script tag in your `index.html`. E.g.:
 
 `<script src="libs/webaep-api.min.js"></script>`
 
@@ -36,6 +46,9 @@ To build the HTML documentation, run `npm run jsdoc`.
 To build the Markdown documentation, run `npm run jsdoc2md`.
 
 ## Changelog
+
+### 1.1.1
+* Changed default IP from `window.location.hostname` to `window.location.host` which includes the port.
 
 ### 1.1.0
 

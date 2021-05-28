@@ -258,7 +258,7 @@ export default {
 
 	/**
 	 * Set printer IP and open a WebSocket connection.
-	 * If no IP is specified the connection will be made either to `localhost` if running locally, otherwise to `window.location.hostname`.
+	 * If no IP is specified the connection will be made either to `localhost` if running locally, otherwise to `window.location.host`.
 	 * @param {string} ip Printer IP.
 	 */
 	connect(ip) {
