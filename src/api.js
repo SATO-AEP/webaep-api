@@ -257,9 +257,16 @@ export default {
 	isPrinter: originalIsPrinter === true,
 
 	/**
-	 * Set printer IP and open a WebSocket connection.
-	 * If no IP is specified the connection will be made either to `localhost` if running locally, otherwise to `window.location.host`.
+	 * Set printer IP and open a WebSocket connection to receive status callbacks.
+	 * If no IP is specified the connection will be made to `localhost` if running locally on a SATO printer, otherwise to `window.location.host`.
 	 * @param {string} ip Printer IP.
+	 * @example
+	 * // Web app hosted on the printer, connect to localhost or window.location.host
+	 * sato.connect()
+	 *
+	 * // When debugging a web app hosted on your PC or an external server it can be useful to specify the IP
+	 * const IP = sato.isPrinter ? undefined : "192.168.0.123"
+	 * sato.connect(IP)
 	 */
 	connect(ip) {
 		if (typeof ip != 'undefined') {
@@ -275,6 +282,8 @@ export default {
 	/**
 	 * Callback called whenever a batch finishes printing.
 	 * @param {batchDoneCallback} callback
+	 * @example
+	 * sato.setPrintDoneCallback(() => console.log("Print job finished!"))
 	 */
 	setPrintDoneCallback(callback) {
 		printDoneCallback = callback;
@@ -290,6 +299,10 @@ export default {
 	/**
 	 * Callback called whenever an error occurs.
 	 * @param {printerErrorCallback} callback
+	 * @example
+	 * sato.setErrorCallback(error => {
+	 *     console.log(error.message + '\nCode: ' + error.code)
+	 * })
 	 */
 	setErrorCallback(callback) {
 		errorCallback = callback;
@@ -302,7 +315,21 @@ export default {
 
 	/**
 	 * Callback called when a barcode is scanned with scanner connected to printer.
+	 * Make sure to empty the scan buffer using `hasScanData` and `getScanData` methods before setting a callback.
+	 * After a callback has been set, incoming scan data will no longer be buffered.
+	 * Call with `undefined` or `null` to clear the callback and start buffring data again.
 	 * @param {scannerCallback} callback
+	 * @example
+	 * // Empty buffer
+	 * while (sato.hasScanData()) {
+	 *     console.log(sato.getScanData())
+	 * }
+	 *
+	 * // Set a scanner callback.
+	 * sato.setScannerCallback(scanData => console.log(scanData))
+	 *
+	 * // Make sure to remove the callback when leaving the screen
+	 * sato.setScannerCallback(undefined)
 	 */
 	setScannerCallback(callback) {
 		scannerCallback = callback;
@@ -310,6 +337,7 @@ export default {
 
 	/**
 	 * Checks if there's data in the scan buffer.
+	 * Note that if a callback is set with `setScannerCallback` incoming scanner data will no longer be buffered.
 	 * @returns {boolean} Whether there is data in the scan buffer.
 	 */
 	hasScanData() {
@@ -318,6 +346,7 @@ export default {
 
 	/**
 	 * Get scan data.
+	 * Note that if a callback is set with `setScannerCallback` incoming scanner data will no longer be buffered.
 	 * @returns {string} Data at the front of scan buffer.
 	 */
 	getScanData() {
@@ -330,8 +359,15 @@ export default {
 	 */
 
 	/**
-	 * Callback called when a live variable has been modified.
+	 * Callback called when a live variable has been modified in the Lua layer.
 	 * @param {variablesCallback} callback
+	 * @example
+	 * // In Lua
+	 * // LiveVar has the checkbox "Propagate changes automatically" ticked in AEP Works 3
+	 * Variables.LiveVar = "Hello World!"
+	 *
+	 * // In JavaScript
+	 * sato.setVariablesCallback(variables => console.log(variables.LiveVar))
 	 */
 	setVariablesCallback(callback) {
 		variablesCallback = callback;
@@ -345,6 +381,17 @@ export default {
 	/**
 	 * Callback called when user data is sent from the Lua layer.
 	 * @param {userDataCallback} callback
+	 * @example
+	 * // In Lua
+	 * local messageType = systemMgmt.getGuiEnums().messageTypeEnum
+	 * local data = {
+	 *     type = messageType.webAepUserData,
+	 *     data = "Hello World!"
+	 * }
+	 * device.sendto(device.path.ima, json.encode(data) .. "\n")
+	 *
+	 * // In JavaScript
+	 * sato.setUserDataCallback(data => console.log(data))
 	 */
 	setUserDataCallback(callback) {
 		userDataCallback = callback;
@@ -353,6 +400,8 @@ export default {
 	/**
 	 * Retrieves variables from printer.
 	 * @returns {Object} Key-value pairs of all application variables.
+	 * @example
+	 * const variables = await sato.fetchVariables()
 	 */
 	async fetchVariables() {
 		const vars = await get('/webaep/data');
@@ -363,6 +412,11 @@ export default {
 	 * Sets, evaluates and retrieves variables from printer.
 	 * @param {Object} variables Key-value pairs of variables to set and evaluate.
 	 * @returns {Object} Key-value pairs of all application variables.
+	 * @example
+	 * sato.saveVariables({
+	 *     Var1: "Hello",
+	 *     Var2: "World!"
+	 * })
 	 */
 	async saveVariables(variables) {
 		const vars = await post('/webaep/data', variables);
@@ -396,6 +450,10 @@ export default {
 	 * @param {batchDoneCallback} options.batchDone Batch done callback.
 	 * @param {printerErrorCallback} options.batchError Callback for each error that occurs until batch done.
 	 * @returns {Object} Request result.
+	 * @example
+	 * sato.printByName("Label1", {
+	 *     quantity: 2
+	 * })
 	 */
 	async printByName(formatName, options = {}) {
 		options.formatName = formatName;
@@ -425,6 +483,27 @@ export default {
 	 * @param {batchDoneCallback} options.batchDone Batch done callback.
 	 * @param {printerErrorCallback} options.batchError Callback for each error that occurs until batch done.
 	 * @returns {Object} Request result.
+	 * @example
+	 * sato.print({
+	 *     name: "Label1",
+	 *     type: "label",
+	 *     design_width: 960,
+	 *     design_height: 960,
+	 *     fields: [{
+	 *             fieldtype: "text",
+	 *             name: "Text1",
+	 *             value: "Hello",
+	 *             hPos: 320,
+	 *             vPos: 230
+	 *         }, {
+	 *             fieldtype: "text",
+	 *             name: "Text2",
+	 *             value: "World!",
+	 *             hPos: 320,
+	 *             vPos: 390
+	 *         }
+	 *     ]
+	 * })
 	 */
 	async print(formatData, options = {}) {
 		options.formatData = formatData;
@@ -448,6 +527,9 @@ export default {
 	 * @param {string} formatName Name of pre-installed format to preview.
 	 * @param {Object} options.data Key-value pairs of application variables to set and evaluate.
 	 * @returns {string} Label bitmap as a base64 string.
+	 * @example
+	 * const imgData = await sato.previewByName("Label1")
+	 * document.getElementById("preview").src = imgData
 	 */
 	async previewByName(formatName, options = {}) {
 		options.formatName = formatName;
@@ -460,6 +542,28 @@ export default {
 	 * @param {Object} formatData Format to print as JSON.
 	 * @param {Object} options.data Key-value pairs of application variables to set and evaluate.
 	 * @returns {string} Label bitmap as a base64 string.
+	 * @example
+	 * const imgData = await sato.preview({
+	 *     name: "Label1",
+	 *     type: "label",
+	 *     design_width: 960,
+	 *     design_height: 960,
+	 *     fields: [{
+	 *             fieldtype: "text",
+	 *             name: "Text1",
+	 *             value: "Hello",
+	 *             hPos: 320,
+	 *             vPos: 230
+	 *         }, {
+	 *             fieldtype: "text",
+	 *             name: "Text2",
+	 *             value: "World!",
+	 *             hPos: 320,
+	 *             vPos: 390
+	 *         }
+	 *     ]
+	 * })
+	 * document.getElementById("preview").src = imgData
 	 */
 	async preview(formatData, options = {}) {
 		options.formatData = formatData;
@@ -470,8 +574,40 @@ export default {
 	/**
 	 * Retrieve rows from table with name `tableName`.
 	 * @param {string} tableName Name of table to fetch rows from.
-	 * @options {Object} Query parameters.
+	 * @param {Object} options Query parameters.
+	 * @param {number} options.rows Number of rows to retrieve. (Default: 30)
+	 * @param {number} options.offset Use to fetch more rows in conjukction with rows. (Default: 0)
+	 * @param {string} options.index Index column.
+	 * @param {string} options.sortBy Alphabetically sort by this column.
+	 * @param {string} options.search Search term for index or sortBy columns.
+	 * @param {string} options.filter Filter expression. See STL00426.
+	 * @param {boolean} options.distinct Whether to only retrieve unique rows.
 	 * @returns {Object[]} Array of rows as key-value pairs `[{ "column": "value", ...}, ...]`.
+	 * @example
+	 * // Fetch the first 30 rows from "ProductTable"
+	 * const rows = await sato.fetchTableRows("ProductTable")
+	 *
+	 * // Fetch another 30 rows
+	 * const rows = await sato.fetchTableRows("ProductTable", {
+	 *     offset: 30
+	 * })
+	 *
+	 * // Fetch rows matching search string
+	 * const rows = await sato.fetchTableRows("ProductTable", {
+	 *     index: "Desc1",
+	 *     search: "Danish"
+	 * })
+	 *
+	 * // Fetch unique categories
+	 * const rows = await sato.fetchTableRows("ProductTable", {
+	 *     columns: ["Category"],
+	 *     distinct: true
+	 * })
+	 *
+	 * // Fetch rows in category
+	 * const rows = await sato.fetchTableRows("ProductTable", {
+	 *     filter: "IN('Category', 'Pastries')"
+	 * })
 	 */
 	async fetchTableRows(tableName, options = {}) {
 		options.tableName = tableName;
