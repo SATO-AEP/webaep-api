@@ -33,6 +33,10 @@ if (typeof sato == 'object') {
 	setBaseURL(window.location.host);
 }
 
+// Printer state
+let printerState = "ready";
+let internalState = {};
+
 // Scan queue
 const SCAN_QUEUE_SIZE = 10;
 const scanData = [];
@@ -41,6 +45,8 @@ const scanData = [];
 const errors = {};
 
 // Global callbacks
+let stateCallback;
+let labelCountCallback;
 let printDoneCallback;
 let scannerCallback;
 let errorCallback;
@@ -48,13 +54,44 @@ let variablesCallback;
 let userDataCallback;
 
 // Batch callbacks
-let labelCountCallback;
+let batchLabelCountCallback;
 let batchDoneCallback;
 let batchErrorCallback;
 
+function setPrinterState(status) {
+	let newState = printerState;
+	const isPrinting = status.processing || status.motion || status.printQty > 0;
+	switch (status.currentState) {
+		case "ONLINE":
+			if (isPrinting) {
+				newState = "printing";
+			} else {
+				newState = "ready";
+			}
+			break;
+		case "OFFLINE":
+			if (isPrinting) {
+				newState = "paused";
+			} else {
+				newState = "busy";
+			}
+			break;
+		case "ERROR":
+			newState = "error";
+			break;
+		default:
+			newState = "busy";
+	}
+
+	if (newState != printerState) {
+		printerState = newState;
+		stateCallback?.(printerState);
+	}
+}
+
 function hookBatchCallbacks(options) {
 	if (typeof options.labelCount == "function") {
-		labelCountCallback = options.labelCount;
+		batchLabelCountCallback = options.labelCount;
 	}
 	if (typeof options.batchDone == "function") {
 		batchDoneCallback = options.batchDone;
@@ -65,7 +102,7 @@ function hookBatchCallbacks(options) {
 }
 
 function unhookBatchCallbacks() {
-	labelCountCallback = undefined;
+	batchLabelCountCallback = undefined;
 	batchDoneCallback = undefined;
 	batchErrorCallback = undefined;
 }
@@ -86,13 +123,9 @@ async function get(url, options = {}) {
 	const res = await raw.json();
 
 	if (raw.ok) {
-		if (typeof options.success == "function") {
-			options.success(raw);
-		}
+		options.success?.(raw);
 	} else {
-		if (typeof options.error == "function") {
-			options.error(raw);
-		}
+		options.error?.(raw);
 	}
 
 	return res;
@@ -106,34 +139,44 @@ async function post(url, options = {}) {
 	const res = await raw.json();
 
 	if (raw.ok) {
-		if (typeof options.success == "function") {
-			options.success(raw);
-		}
+		options.success?.(raw);
 	} else {
-		if (typeof options.error == "function") {
-			options.error(raw);
-		}
+		options.error?.(raw);
 	}
 	return res;
 }
 
 let msgType = {};
+let keysEnum = {};
+let statusEnum = {};
 async function handleMessage(msg) {
 	switch (msg.type) {
+		case msgType.STATUS:
+			internalState.currentState = statusEnum[msg.v];
+			setPrinterState(internalState);
+			break;
+
+		case msgType.PROCESSING:
+			internalState.processing = !!msg.v;
+			setPrinterState(internalState);
+			break;
+
+		case msgType.MOTION:
+			internalState.motion = !!msg.v;
+			setPrinterState(internalState);
+			break;
+
 		case msgType.TLABELCOUNT:
-			if (typeof labelCountCallback == "function") {
-				labelCountCallback(msg.v);
-			}
+			labelCountCallback?.(msg.v);
+			batchLabelCountCallback?.(msg.v);
 			if (msg.v == 0) {
-				if (typeof printDoneCallback == "function") {
-					printDoneCallback();
-				}
-				if (typeof batchDoneCallback == "function") {
-					batchDoneCallback();
-				}
+				printDoneCallback?.();
+				batchDoneCallback?.();
 
 				unhookBatchCallbacks();
 			}
+			internalState.printQty = msg.v;
+			setPrinterState(internalState);
 			break;
 
 		case msgType.ERROR: {
@@ -144,12 +187,8 @@ async function handleMessage(msg) {
 				errors[msg.data] = localized[msg.data];
 			}
 			const error = { code: msg.data, message: errors[msg.data] }
-			if (typeof errorCallback == "function") {
-				errorCallback(error);
-			}
-			if (typeof batchErrorCallback == "function") {
-				batchErrorCallback(error);
-			}
+			errorCallback?.(error);
+			batchErrorCallback?.(error);
 			break;
 		}
 
@@ -173,17 +212,13 @@ async function handleMessage(msg) {
 
 		case msgType.webAepVariables: {
 			let variables = msg.data;
-			if (typeof variablesCallback == "function") {
-				variablesCallback(variables);
-			}
+			variablesCallback?.(variables);
 			break;
 		}
 
 		case msgType.webAepUserData: {
 			let data = msg.data;
-			if (typeof userDataCallback == "function") {
-				userDataCallback(data);
-			}
+			userDataCallback?.(data);
 			break;
 		}
 
@@ -234,6 +269,11 @@ async function connect() {
 
 	const enums = await get('/rest/enums');
 	msgType = enums.messageTypeEnum;
+	keysEnum = enums.keysEnum;
+	statusEnum = enums.status;
+
+	internalState = await get('/rest/state');
+	setPrinterState(internalState);
 
 	websocket = await wsConnect();
 	if (isLocalClient) {
@@ -273,6 +313,56 @@ export default {
 			setBaseURL(ip);
 		}
 		return connect();
+	},
+
+	/**
+	 * Get current printer state, where state is one of
+	 * "ready", "printing", "paused", "busy", "error"
+	 * @returns {string} Printer state
+	 */
+	getPrinterState() {
+		return printerState;
+	},
+
+	/**
+	 * @callback stateCallback
+	 * @param {string} state Printer state
+	 */
+
+	/**
+	 * Callback called when printer state changes.
+	 * Where state is one of "ready", "printing", "paused", "busy", "error"
+	 * @param {stateCallback} callback
+	 * @example
+	 * sato.setStateCallback((state) => console.log("Printer state is: " + state))
+	 */
+	setStateCallback(callback) {
+		stateCallback = callback;
+	},
+
+	/**
+	 * Get number of labels in queue
+	 * @returns {number} Number of labels in queue
+	 * @example
+	 * console.log("Labels in queue: " + sato.getLabelCount())
+	 */
+	getLabelCount() {
+		return internalState.printQty;
+	},
+
+	/**
+	 * @callback labelCountCallback
+	 * @param {number} labelCount Number of labels left in queue.
+	 */
+
+	/**
+	 * Callback called after each label in batch.
+	 * @param {labeCountCallback} callback
+	 * @example
+	 * sato.setLabelCountCallback((labelCount) => console.log("Labels in queue: " + labelCount))
+	 */
+	setLabelCountCallback(callback) {
+		labelCountCallback = callback;
 	},
 
 	/**
@@ -434,12 +524,6 @@ export default {
 	 */
 
 	/**
-	 * Called after each label in batch.
-	 * @callback labelCountCallback
-	 * @param {number} labelCount Number of labels left in queue.
-	 */
-
-	/**
 	 * Print pre-installed format with name `formatName`.
 	 * @param {string} formatName Name of pre-installed format to print.
 	 * @param {number} options.quantity Number of labels to print.
@@ -463,9 +547,7 @@ export default {
 			if (raw.ok) {
 				hookBatchCallbacks(options);
 			}
-			if (typeof success == "function") {
-				success(raw);
-			}
+			success?.(raw);
 		}
 		const res = await post('/webaep/print', options);
 
@@ -513,9 +595,7 @@ export default {
 			if (raw.ok) {
 				hookBatchCallbacks(options);
 			}
-			if (typeof success == "function") {
-				success(raw);
-			}
+			success?.(raw);
 		}
 		const res = await post('/webaep/print', options);
 
@@ -613,5 +693,37 @@ export default {
 		options.tableName = tableName;
 		const res = await get('/webaep/table', options);
 		return res;
+	},
+
+	/**
+	 * Get list of available keys
+	 * @returns Keys enum
+	 */
+	getKeysEnum() {
+		return keysEnum;
+	},
+
+	/**
+	 * Send keypress to printer
+	 * @param {number} key
+	 * @example
+	 * const keys = sato.getKeysEnum()
+	 *
+	 * // Pause current print job
+	 * sato.sendKey(keys.OFFLINE)
+	 * ...
+	 * // Resume print job
+	 * sato.sendKey(keys.ONLINE)
+	 * ...
+	 * // Cancel print job
+	 * sato.sendKey(keys.CANCEL)
+	 */
+	sendKey(key) {
+		if (typeof(key) == "number" && keysEnum[key] != null) {
+			websocket.send(JSON.stringify({
+				type: msgType.vkey,
+				data: key
+			}));
+		}
 	}
 }

@@ -47,6 +47,12 @@ To build the Markdown documentation, run `npm run jsdoc2md`.
 
 ## Changelog
 
+### 1.2.0
+* Additions to help when implementing a custom printing screen:
+
+    * Methods for retrieving printer state: `getPrinterState` and `getLabelCount`
+    * Method to trigger key presses to pause/resume/cancel print job: `sendKey` and `getKeysEnum`
+    * New callbacks: `setStateCallback` and `setLabelCountCallback`
 ### 1.1.1
 * Changed default IP from `window.location.hostname` to `window.location.host` which includes the port.
 
