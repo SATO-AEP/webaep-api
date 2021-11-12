@@ -47,6 +47,8 @@ To build the Markdown documentation, run `npm run jsdoc2md`.
 
 ## Changelog
 
+### 1.2.1
+* Use the correct WebSocket port when running in PSim.
 ### 1.2.0
 * Additions to help when implementing a custom printing screen:
 

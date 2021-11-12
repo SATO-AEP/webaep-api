@@ -275,6 +275,13 @@ async function connect() {
 	internalState = await get('/rest/state');
 	setPrinterState(internalState);
 
+	// PSim can't rewrite the WebSocket URL on its own so we need to give it some help.
+	// eslint-disable-next-line no-undef
+	if (typeof psim?.getPort == 'function') {
+		// eslint-disable-next-line no-undef
+		const port = await psim.getPort();
+		wsURL = wsURL.replace('ws://127.0.0.1/', `wss://127.0.0.1:${port}/`);
+	}
 	websocket = await wsConnect();
 	if (isLocalClient) {
 		// Tell backend we're a local client (don't worry, this makes perfect sense)
