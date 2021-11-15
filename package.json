@@ -1,6 +1,6 @@
 {
   "name": "webaep-api",
-  "version": "1.2.1",
+  "version": "2.0.0",
   "description": "SATO Web AEP API reference implementation.",
   "main": "lib/api.js",
   "files": [
@@ -22,7 +22,7 @@
     "@babel/preset-env": "^7.16.0",
     "babel-loader": "^8.2.3",
     "jsdoc-to-markdown": "^7.1.0",
-    "webpack": "^5.63.0",
+    "webpack": "^5.64.0",
     "webpack-cli": "^4.9.1"
   },
   "dependencies": {}

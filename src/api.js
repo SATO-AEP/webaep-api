@@ -1,14 +1,12 @@
 /**
  * A module for interfacing with the printer side of a SATO Web AEP application
- * @module sato
+ * @module webaep
  */
 
 // const DEBUG = true;
 let baseURL;
 let wsURL;
 let isLocalClient = false;
-
-let originalIsPrinter
 
 function setBaseURL(ip) {
 	if (ip == 'localhost') {
@@ -25,10 +23,8 @@ function setBaseURL(ip) {
 	}
 }
 
-if (typeof sato == 'object') {
+if (sato?.isPrinter === true) {
 	setBaseURL('localhost');
-	// eslint-disable-next-line no-undef
-	originalIsPrinter = sato.isPrinter;
 } else {
 	setBaseURL(window.location.host);
 }
@@ -295,13 +291,15 @@ export default {
 	 * Indicates whether the application is running in the printer's web browser or not.
 	 * @type {boolean}
 	 * @example
-	 * if (sato.isPrinter) {
+	 * if (webaep.isPrinter()) {
 	 *     // do something
 	 * } else {
 	 *     // do something else
 	 * }
 	 */
-	isPrinter: originalIsPrinter === true,
+	isPrinter() {
+		return sato?.isPrinter === true;
+	},
 
 	/**
 	 * Set printer IP and open a WebSocket connection to receive status callbacks.
@@ -309,11 +307,11 @@ export default {
 	 * @param {string} ip Printer IP.
 	 * @example
 	 * // Web app hosted on the printer, connect to localhost or window.location.host
-	 * sato.connect()
+	 * webaep.connect()
 	 *
 	 * // When debugging a web app hosted on your PC or an external server it can be useful to specify the IP
-	 * const IP = sato.isPrinter ? undefined : "192.168.0.123"
-	 * sato.connect(IP)
+	 * const IP = webaep.isPrinter() ? undefined : "192.168.0.123"
+	 * webaep.connect(IP)
 	 */
 	connect(ip) {
 		if (typeof ip != 'undefined') {
@@ -341,7 +339,7 @@ export default {
 	 * Where state is one of "ready", "printing", "paused", "busy", "error"
 	 * @param {stateCallback} callback
 	 * @example
-	 * sato.setStateCallback((state) => console.log("Printer state is: " + state))
+	 * webaep.setStateCallback((state) => console.log("Printer state is: " + state))
 	 */
 	setStateCallback(callback) {
 		stateCallback = callback;
@@ -351,7 +349,7 @@ export default {
 	 * Get number of labels in queue
 	 * @returns {number} Number of labels in queue
 	 * @example
-	 * console.log("Labels in queue: " + sato.getLabelCount())
+	 * console.log("Labels in queue: " + webaep.getLabelCount())
 	 */
 	getLabelCount() {
 		return internalState.printQty;
@@ -366,7 +364,7 @@ export default {
 	 * Callback called after each label in batch.
 	 * @param {labeCountCallback} callback
 	 * @example
-	 * sato.setLabelCountCallback((labelCount) => console.log("Labels in queue: " + labelCount))
+	 * webaep.setLabelCountCallback((labelCount) => console.log("Labels in queue: " + labelCount))
 	 */
 	setLabelCountCallback(callback) {
 		labelCountCallback = callback;
@@ -380,7 +378,7 @@ export default {
 	 * Callback called whenever a batch finishes printing.
 	 * @param {batchDoneCallback} callback
 	 * @example
-	 * sato.setPrintDoneCallback(() => console.log("Print job finished!"))
+	 * webaep.setPrintDoneCallback(() => console.log("Print job finished!"))
 	 */
 	setPrintDoneCallback(callback) {
 		printDoneCallback = callback;
@@ -397,7 +395,7 @@ export default {
 	 * Callback called whenever an error occurs.
 	 * @param {printerErrorCallback} callback
 	 * @example
-	 * sato.setErrorCallback(error => {
+	 * webaep.setErrorCallback(error => {
 	 *     console.log(error.message + '\nCode: ' + error.code)
 	 * })
 	 */
@@ -418,15 +416,15 @@ export default {
 	 * @param {scannerCallback} callback
 	 * @example
 	 * // Empty buffer
-	 * while (sato.hasScanData()) {
-	 *     console.log(sato.getScanData())
+	 * while (webaep.hasScanData()) {
+	 *     console.log(webaep.getScanData())
 	 * }
 	 *
 	 * // Set a scanner callback.
-	 * sato.setScannerCallback(scanData => console.log(scanData))
+	 * webaep.setScannerCallback(scanData => console.log(scanData))
 	 *
 	 * // Make sure to remove the callback when leaving the screen
-	 * sato.setScannerCallback(undefined)
+	 * webaep.setScannerCallback(undefined)
 	 */
 	setScannerCallback(callback) {
 		scannerCallback = callback;
@@ -464,7 +462,7 @@ export default {
 	 * Variables.LiveVar = "Hello World!"
 	 *
 	 * // In JavaScript
-	 * sato.setVariablesCallback(variables => console.log(variables.LiveVar))
+	 * webaep.setVariablesCallback(variables => console.log(variables.LiveVar))
 	 */
 	setVariablesCallback(callback) {
 		variablesCallback = callback;
@@ -488,7 +486,7 @@ export default {
 	 * device.sendto(device.path.ima, json.encode(data) .. "\n")
 	 *
 	 * // In JavaScript
-	 * sato.setUserDataCallback(data => console.log(data))
+	 * webaep.setUserDataCallback(data => console.log(data))
 	 */
 	setUserDataCallback(callback) {
 		userDataCallback = callback;
@@ -498,7 +496,7 @@ export default {
 	 * Retrieves variables from printer.
 	 * @returns {Object} Key-value pairs of all application variables.
 	 * @example
-	 * const variables = await sato.fetchVariables()
+	 * const variables = await webaep.fetchVariables()
 	 */
 	async fetchVariables() {
 		const vars = await get('/webaep/data');
@@ -510,7 +508,7 @@ export default {
 	 * @param {Object} variables Key-value pairs of variables to set and evaluate.
 	 * @returns {Object} Key-value pairs of all application variables.
 	 * @example
-	 * sato.saveVariables({
+	 * webaep.saveVariables({
 	 *     Var1: "Hello",
 	 *     Var2: "World!"
 	 * })
@@ -542,7 +540,7 @@ export default {
 	 * @param {printerErrorCallback} options.batchError Callback for each error that occurs until batch done.
 	 * @returns {Object} Request result.
 	 * @example
-	 * sato.printByName("Label1", {
+	 * webaep.printByName("Label1", {
 	 *     quantity: 2
 	 * })
 	 */
@@ -573,7 +571,7 @@ export default {
 	 * @param {printerErrorCallback} options.batchError Callback for each error that occurs until batch done.
 	 * @returns {Object} Request result.
 	 * @example
-	 * sato.print({
+	 * webaep.print({
 	 *     name: "Label1",
 	 *     type: "label",
 	 *     design_width: 960,
@@ -615,7 +613,7 @@ export default {
 	 * @param {Object} options.data Key-value pairs of application variables to set and evaluate.
 	 * @returns {string} Label bitmap as a base64 string.
 	 * @example
-	 * const imgData = await sato.previewByName("Label1")
+	 * const imgData = await webaep.previewByName("Label1")
 	 * document.getElementById("preview").src = imgData
 	 */
 	async previewByName(formatName, options = {}) {
@@ -630,7 +628,7 @@ export default {
 	 * @param {Object} options.data Key-value pairs of application variables to set and evaluate.
 	 * @returns {string} Label bitmap as a base64 string.
 	 * @example
-	 * const imgData = await sato.preview({
+	 * const imgData = await webaep.preview({
 	 *     name: "Label1",
 	 *     type: "label",
 	 *     design_width: 960,
@@ -672,27 +670,27 @@ export default {
 	 * @returns {Object[]} Array of rows as key-value pairs `[{ "column": "value", ...}, ...]`.
 	 * @example
 	 * // Fetch the first 30 rows from "ProductTable"
-	 * const rows = await sato.fetchTableRows("ProductTable")
+	 * const rows = await webaep.fetchTableRows("ProductTable")
 	 *
 	 * // Fetch another 30 rows
-	 * const rows = await sato.fetchTableRows("ProductTable", {
+	 * const rows = await webaep.fetchTableRows("ProductTable", {
 	 *     offset: 30
 	 * })
 	 *
 	 * // Fetch rows matching search string
-	 * const rows = await sato.fetchTableRows("ProductTable", {
+	 * const rows = await webaep.fetchTableRows("ProductTable", {
 	 *     index: "Desc1",
 	 *     search: "Danish"
 	 * })
 	 *
 	 * // Fetch unique categories
-	 * const rows = await sato.fetchTableRows("ProductTable", {
+	 * const rows = await webaep.fetchTableRows("ProductTable", {
 	 *     columns: ["Category"],
 	 *     distinct: true
 	 * })
 	 *
 	 * // Fetch rows in category
-	 * const rows = await sato.fetchTableRows("ProductTable", {
+	 * const rows = await webaep.fetchTableRows("ProductTable", {
 	 *     filter: "IN('Category', 'Pastries')"
 	 * })
 	 */
@@ -714,16 +712,16 @@ export default {
 	 * Send keypress to printer
 	 * @param {number} key
 	 * @example
-	 * const keys = sato.getKeysEnum()
+	 * const keys = webaep.getKeysEnum()
 	 *
 	 * // Pause current print job
-	 * sato.sendKey(keys.OFFLINE)
+	 * webaep.sendKey(keys.OFFLINE)
 	 * ...
 	 * // Resume print job
-	 * sato.sendKey(keys.ONLINE)
+	 * webaep.sendKey(keys.ONLINE)
 	 * ...
 	 * // Cancel print job
-	 * sato.sendKey(keys.CANCEL)
+	 * webaep.sendKey(keys.CANCEL)
 	 */
 	sendKey(key) {
 		if (typeof(key) == "number" && keysEnum[key] != null) {

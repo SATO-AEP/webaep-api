@@ -27,7 +27,7 @@ The pre-built version can be included in your project as a script tag in your `i
 
 `<script src="libs/webaep-api.min.js"></script>`
 
-This will attach the API to the global `sato` object.
+This will attach the API to the global `webaep` object.
 
 ## Build
 
@@ -47,6 +47,9 @@ To build the Markdown documentation, run `npm run jsdoc2md`.
 
 ## Changelog
 
+### 2.0.0
+* Breaking API change. `isPrinter` is now a function and needs to be called as such. I.e. replace all occurences of `isPrinter` with `isPrinter()`.
+* Breaking change for pre-built libraries. The API now attaches to `window.webaep` since `window.sato` is read-only in certain environments. The documentation has been updated to reflect this.
 ### 1.2.1
 * Use the correct WebSocket port when running in PSim.
 ### 1.2.0

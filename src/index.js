@@ -1,7 +1,7 @@
 import api from './api.js';
 
-window.sato = window.sato ?? {};
+window.webaep = window.webaep ?? {};
 
 for (const k in api) {
-    window.sato[k] = api[k];
+    window.webaep[k] = api[k];
 }
