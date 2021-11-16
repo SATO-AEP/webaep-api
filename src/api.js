@@ -23,7 +23,7 @@ function setBaseURL(ip) {
 	}
 }
 
-if (sato?.isPrinter === true) {
+if (typeof sato !== 'undefined' && sato.isPrinter === true) {
 	setBaseURL('localhost');
 } else {
 	setBaseURL(window.location.host);
@@ -273,7 +273,7 @@ async function connect() {
 
 	// PSim can't rewrite the WebSocket URL on its own so we need to give it some help.
 	// eslint-disable-next-line no-undef
-	if (typeof psim?.getPort == 'function') {
+	if (typeof psim !== 'undefined' && typeof psim.getPort === 'function') {
 		// eslint-disable-next-line no-undef
 		const port = await psim.getPort();
 		wsURL = wsURL.replace('ws://127.0.0.1/', `wss://127.0.0.1:${port}/`);
@@ -298,7 +298,7 @@ export default {
 	 * }
 	 */
 	isPrinter() {
-		return sato?.isPrinter === true;
+		return typeof sato !== 'undefined' && sato.isPrinter === true;
 	},
 
 	/**

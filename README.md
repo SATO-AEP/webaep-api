@@ -47,6 +47,8 @@ To build the Markdown documentation, run `npm run jsdoc2md`.
 
 ## Changelog
 
+### 2.0.1
+* This release should work on actual printers and not just PSim.
 ### 2.0.0
 * Breaking API change. `isPrinter` is now a function and needs to be called as such. I.e. replace all occurences of `isPrinter` with `isPrinter()`.
 * Breaking change for pre-built libraries. The API now attaches to `window.webaep` since `window.sato` is read-only in certain environments. The documentation has been updated to reflect this.
